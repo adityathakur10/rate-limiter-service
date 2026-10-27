@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: admin-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ratelimiter}
+    username: ${DB_USERNAME:ratelimiter}
+    password: ${DB_PASSWORD:ratelimiter}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true

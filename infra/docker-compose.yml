@@ -1,0 +1,22 @@
+services:
+  postgres:
+    # bookworm (Debian 12) keeps legacy tz names like Asia/Calcutta that JVM clients send;
+    # the default Debian 13 image dropped them and rejects those connections
+    image: postgres:16-bookworm
+    container_name: ratelimiter-postgres
+    environment:
+      POSTGRES_DB: ratelimiter
+      POSTGRES_USER: ratelimiter
+      POSTGRES_PASSWORD: ratelimiter
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ratelimiter -d ratelimiter"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:

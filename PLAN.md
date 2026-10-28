@@ -114,8 +114,8 @@ Tenants and rules can be created, read, updated and deleted through REST, backed
 - [x] **1.8 CacheInvalidator stub.** An interface plus a no-op implementation called by RuleService on every write. The real Redis version arrives in step 3.9, so Stage 1 stays Postgres-only.
 - [x] **1.9 TenantController.** POST /admin/v1/tenants returns 201 with the generated key. GET /admin/v1/tenants/{id}. @Valid on the body.
 - [x] **1.10 RuleController.** POST /admin/v1/rules, GET /admin/v1/rules?tenantId=, PUT /admin/v1/rules/{id}, DELETE /admin/v1/rules/{id}. @Valid on bodies.
-- [ ] **1.11 GlobalExceptionHandler.** RateLimiterException subtypes map to 404, 409 and 400 with one JSON error shape. Bean validation errors list the failing fields.
-- [ ] **1.12 Postman collection.** infra/postman/rate-limiter.postman_collection.json covering all six endpoints plus the error cases. Core-service requests are added in Stages 2 and 3.
+- [x] **1.11 GlobalExceptionHandler.** RateLimiterException subtypes map to 404, 409 and 400 with one JSON error shape. Bean validation errors list the failing fields.
+- [x] **1.12 Postman collection.** infra/postman/rate-limiter.postman_collection.json covering all six endpoints plus the error cases. Core-service requests are added in Stages 2 and 3.
 - [ ] **1.13 Unit tests.** API key format and uniqueness, mappers, and service logic with mocked repositories.
 - [ ] **1.14 Controller integration tests.** @SpringBootTest with Testcontainers Postgres (needs Docker running): full CRUD, 404, 409 and 400 paths.
 - [ ] **1.15 Verify Stage 1 end to end.** Bring up Postgres, run admin-service, execute the Postman flow, inspect the tables, run ./mvnw clean install. Report results and stop for review.

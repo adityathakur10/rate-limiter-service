@@ -1,0 +1,428 @@
+{
+  "info": {
+    "name": "Rate Limiter",
+    "description": "admin-service requests (Stage 1). Run top to bottom: the first request saves tenantId and apiKey, the rule requests save ruleId, and each request asserts its status code. Core-service requests are added in Stages 2 and 3.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "adminUrl", "value": "http://localhost:8081" },
+    { "key": "tenantId", "value": "" },
+    { "key": "apiKey", "value": "" },
+    { "key": "ruleId", "value": "" },
+    { "key": "unknownId", "value": "00000000-0000-0000-0000-000000000000" }
+  ],
+  "item": [
+    {
+      "name": "Admin - happy path",
+      "item": [
+        {
+          "name": "Create tenant (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('returns id and api key', () => {",
+                  "  pm.expect(body.id).to.be.a('string');",
+                  "  pm.expect(body.apiKey).to.match(/^rl_/);",
+                  "});",
+                  "pm.collectionVariables.set('tenantId', body.id);",
+                  "pm.collectionVariables.set('apiKey', body.apiKey);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Acme Corp\"\n}" },
+            "url": { "raw": "{{adminUrl}}/admin/v1/tenants", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants"] }
+          }
+        },
+        {
+          "name": "Get tenant (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('same tenant', () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get('tenantId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{adminUrl}}/admin/v1/tenants/{{tenantId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants", "{{tenantId}}"] }
+          }
+        },
+        {
+          "name": "Create rule (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('returns the rule', () => {",
+                  "  pm.expect(body.id).to.be.a('string');",
+                  "  pm.expect(body.endpoint).to.eql('/api/orders');",
+                  "  pm.expect(body.limit).to.eql(100);",
+                  "});",
+                  "pm.collectionVariables.set('ruleId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 100,\n  \"windowSeconds\": 60\n}"
+            },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+          }
+        },
+        {
+          "name": "List rules by tenant (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('contains the created rule', () => {",
+                  "  const ids = pm.response.json().map(r => r.id);",
+                  "  pm.expect(ids).to.include(pm.collectionVariables.get('ruleId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules?tenantId={{tenantId}}",
+              "host": ["{{adminUrl}}"],
+              "path": ["admin", "v1", "rules"],
+              "query": [{ "key": "tenantId", "value": "{{tenantId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Update rule (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('values updated', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.limit).to.eql(200);",
+                  "  pm.expect(body.windowSeconds).to.eql(30);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 200,\n  \"windowSeconds\": 30\n}"
+            },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{ruleId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - error cases",
+      "item": [
+        {
+          "name": "Create duplicate rule (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('error shape', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql(409);",
+                  "  pm.expect(body.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 100,\n  \"windowSeconds\": 60\n}"
+            },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+          }
+        },
+        {
+          "name": "Create rule, validation failure (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('lists the failing fields', () => {",
+                  "  const fields = pm.response.json().fields;",
+                  "  pm.expect(fields).to.have.property('endpoint');",
+                  "  pm.expect(fields).to.have.property('limit');",
+                  "  pm.expect(fields).to.have.property('windowSeconds');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"\",\n  \"method\": \"GET\",\n  \"limit\": 0,\n  \"windowSeconds\": 0\n}"
+            },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+          }
+        },
+        {
+          "name": "Create rule, unknown tenant (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{unknownId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"GET\",\n  \"limit\": 10,\n  \"windowSeconds\": 60\n}"
+            },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+          }
+        },
+        {
+          "name": "Create rule, malformed body (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"tenantId\": " },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+          }
+        },
+        {
+          "name": "List rules, missing tenantId (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+          }
+        },
+        {
+          "name": "List rules, unknown tenant (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules?tenantId={{unknownId}}",
+              "host": ["{{adminUrl}}"],
+              "path": ["admin", "v1", "rules"],
+              "query": [{ "key": "tenantId", "value": "{{unknownId}}" }]
+            }
+          }
+        },
+        {
+          "name": "Update unknown rule (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 10,\n  \"windowSeconds\": 60\n}"
+            },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{unknownId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{unknownId}}"] }
+          }
+        },
+        {
+          "name": "Create tenant, blank name (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('name is listed as failing', () => pm.expect(pm.response.json().fields).to.have.property('name'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" },
+            "url": { "raw": "{{adminUrl}}/admin/v1/tenants", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants"] }
+          }
+        },
+        {
+          "name": "Get tenant, unknown id (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('error shape', () => pm.expect(pm.response.json().status).to.eql(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{adminUrl}}/admin/v1/tenants/{{unknownId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants", "{{unknownId}}"] }
+          }
+        },
+        {
+          "name": "Get tenant, invalid id (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{adminUrl}}/admin/v1/tenants/not-a-uuid", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants", "not-a-uuid"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - cleanup",
+      "item": [
+        {
+          "name": "Delete rule (204)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{ruleId}}"] }
+          }
+        },
+        {
+          "name": "Delete rule again (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{ruleId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

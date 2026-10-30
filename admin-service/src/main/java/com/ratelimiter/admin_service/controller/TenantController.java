@@ -2,6 +2,7 @@ package com.ratelimiter.admin_service.controller;
 
 import com.ratelimiter.admin_service.service.TenantService;
 import com.ratelimiter.common.dto.TenantDto;
+import com.ratelimiter.common.reactive.BlockingCall;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
@@ -25,12 +27,14 @@ public class TenantController {
     }
 
     @PostMapping
-    public ResponseEntity<TenantDto> create(@Valid @RequestBody TenantDto request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(tenantService.create(request));
+    public Mono<ResponseEntity<TenantDto>> create(@Valid @RequestBody TenantDto request) {
+        return BlockingCall.call(() -> tenantService.create(request))
+                .map(tenant -> ResponseEntity.status(HttpStatus.CREATED).body(tenant));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TenantDto> getById(@PathVariable UUID id) {
-        return ResponseEntity.status(HttpStatus.OK).body(tenantService.getById(id));
+    public Mono<ResponseEntity<TenantDto>> getById(@PathVariable UUID id) {
+        return BlockingCall.call(() -> tenantService.getById(id))
+                .map(tenant -> ResponseEntity.status(HttpStatus.OK).body(tenant));
     }
 }

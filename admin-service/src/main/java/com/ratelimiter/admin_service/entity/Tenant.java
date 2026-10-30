@@ -9,6 +9,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Entity
@@ -30,7 +31,8 @@ public class Tenant {
 
     @PrePersist
     void onCreate() {
-        createdAt = Instant.now();
+        // Postgres keeps microseconds, so truncate to return exactly what is stored
+        createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
     }
 
     public UUID getId() {

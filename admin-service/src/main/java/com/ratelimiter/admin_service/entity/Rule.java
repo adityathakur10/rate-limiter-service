@@ -10,6 +10,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Entity
@@ -44,13 +45,14 @@ public class Rule {
 
     @PrePersist
     void onCreate() {
-        createdAt = Instant.now();
+        // Postgres keeps microseconds, so truncate to return exactly what is stored
+        createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
         updatedAt = createdAt;
     }
 
     @PreUpdate
     void onUpdate() {
-        updatedAt = Instant.now();
+        updatedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
     }
 
     public UUID getId() {

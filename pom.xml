@@ -18,8 +18,8 @@
 
 	<modules>
 		<module>common</module>
-		<module>admin-service</module>
-		<module>core-service</module>
+		<module>admin</module>
+		<module>core</module>
 		<module>app</module>
 	</modules>
 

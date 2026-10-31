@@ -11,7 +11,7 @@
 
 	<artifactId>app</artifactId>
 	<name>app</name>
-	<description>The one deployable: boots admin-service and core-service together</description>
+	<description>The one deployable: boots the admin and core modules together</description>
 
 	<dependencies>
 		<dependency>
@@ -20,12 +20,12 @@
 		</dependency>
 		<dependency>
 			<groupId>com.ratelimiter</groupId>
-			<artifactId>admin-service</artifactId>
+			<artifactId>admin</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ratelimiter</groupId>
-			<artifactId>core-service</artifactId>
+			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Rate Limiter",
-    "description": "admin-service requests (Stage 1). Run top to bottom: the first request saves tenantId and apiKey, the rule requests save ruleId, and each request asserts its status code. Core-service requests are added in Stages 2 and 3.",
+    "description": "Admin requests (Stage 1) and POST /v1/check requests (Stage 2). Run top to bottom: the first request saves tenantId and apiKey, the rule requests save ruleId, and each request asserts its status code. The check folders need Redis running as well as Postgres. Stage 3 adds the real-rule and 401 cases.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -9,7 +9,11 @@
     { "key": "tenantId", "value": "" },
     { "key": "apiKey", "value": "" },
     { "key": "ruleId", "value": "" },
-    { "key": "unknownId", "value": "00000000-0000-0000-0000-000000000000" }
+    { "key": "unknownId", "value": "00000000-0000-0000-0000-000000000000" },
+    { "key": "coreUrl", "value": "http://localhost:8080" },
+    { "key": "checkApiKey", "value": "any-key-until-stage-3" },
+    { "key": "checkTenantId", "value": "" },
+    { "key": "limitTenantId", "value": "" }
   ],
   "item": [
     {
@@ -377,6 +381,255 @@
             "method": "GET",
             "header": [],
             "url": { "raw": "{{adminUrl}}/admin/v1/tenants/not-a-uuid", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants", "not-a-uuid"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Core - check",
+      "description": "POST /v1/check against the hardcoded rule of step 2.9: 5 requests per 60 seconds per tenant. Each request in this folder uses a fresh random tenant, so the folder can be re-run any time. The api key is not validated until Stage 3.",
+      "item": [
+        {
+          "name": "Check, first call (200)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('checkTenantId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('allowed, 4 remaining, reset time present, no retryAfter', () => {",
+                  "  pm.expect(body.allowed).to.eql(true);",
+                  "  pm.expect(body.remaining).to.eql(4);",
+                  "  pm.expect(body.resetAt).to.be.a('string');",
+                  "  pm.expect(body).to.not.have.property('retryAfterSeconds');",
+                  "});",
+                  "pm.test('X-RateLimit headers', () => {",
+                  "  pm.expect(pm.response.headers.get('X-RateLimit-Limit')).to.eql('5');",
+                  "  pm.expect(pm.response.headers.get('X-RateLimit-Remaining')).to.eql('4');",
+                  "  pm.expect(pm.response.headers.get('X-RateLimit-Reset')).to.match(/^\\d+$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        },
+        {
+          "name": "Check, second call (200, remaining falls)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('3 remaining', () => {",
+                  "  pm.expect(pm.response.json().remaining).to.eql(3);",
+                  "  pm.expect(pm.response.headers.get('X-RateLimit-Remaining')).to.eql('3');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        },
+        {
+          "name": "Check, over the limit (429)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// use up the 5 allowed calls for a fresh tenant, so the request itself is the 6th",
+                  "const tenant = pm.variables.replaceIn('{{$guid}}');",
+                  "pm.collectionVariables.set('limitTenantId', tenant);",
+                  "const payload = JSON.stringify({ tenantId: tenant, apiKey: pm.collectionVariables.get('checkApiKey'), endpoint: '/payments/send', method: 'POST' });",
+                  "for (let i = 0; i < 5; i++) {",
+                  "  pm.sendRequest({",
+                  "    url: pm.collectionVariables.get('coreUrl') + '/v1/check',",
+                  "    method: 'POST',",
+                  "    header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: payload }",
+                  "  });",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('429 Too Many Requests', () => pm.response.to.have.status(429));",
+                  "const body = pm.response.json();",
+                  "pm.test('denied with retryAfterSeconds, no resetAt', () => {",
+                  "  pm.expect(body.allowed).to.eql(false);",
+                  "  pm.expect(body.remaining).to.eql(0);",
+                  "  pm.expect(body.retryAfterSeconds).to.be.within(1, 60);",
+                  "  pm.expect(body).to.not.have.property('resetAt');",
+                  "});",
+                  "pm.test('Retry-After and X-RateLimit headers', () => {",
+                  "  pm.expect(pm.response.headers.get('Retry-After')).to.eql(String(body.retryAfterSeconds));",
+                  "  pm.expect(pm.response.headers.get('X-RateLimit-Limit')).to.eql('5');",
+                  "  pm.expect(pm.response.headers.get('X-RateLimit-Remaining')).to.eql('0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{limitTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Core - error cases",
+      "item": [
+        {
+          "name": "Check, blank endpoint (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('names the failing field', () => pm.expect(pm.response.json().fields).to.have.property('endpoint'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{unknownId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"\",\n  \"method\": \"POST\"\n}" },
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        },
+        {
+          "name": "Check, missing tenantId (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('names the failing field', () => pm.expect(pm.response.json().fields).to.have.property('tenantId'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        },
+        {
+          "name": "Check, tenantId not a UUID (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"not-a-uuid\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        },
+        {
+          "name": "Check, malformed body (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ this is not json" },
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        },
+        {
+          "name": "Check, wrong method GET (405)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('405 Method Not Allowed', () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+          }
+        },
+        {
+          "name": "Unknown route (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{coreUrl}}/v1/does-not-exist", "host": ["{{coreUrl}}"], "path": ["v1", "does-not-exist"] }
           }
         }
       ]

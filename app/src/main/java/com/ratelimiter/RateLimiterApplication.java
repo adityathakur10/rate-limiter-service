@@ -3,7 +3,7 @@ package com.ratelimiter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-// sits in the root package so component scanning reaches admin_service and core_service
+// sits in the root package so component scanning reaches the admin and core packages
 @SpringBootApplication
 public class RateLimiterApplication {
 

@@ -39,3 +39,7 @@ Thumbs.db
 
 ### Local env ###
 .env
+
+### Notes (kept local; README is the only Markdown file in the repo) ###
+*.md
+!README.md

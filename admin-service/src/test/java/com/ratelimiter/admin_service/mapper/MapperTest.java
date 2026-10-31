@@ -47,6 +47,6 @@ class MapperTest {
 
         RuleDto dto = new RuleMapper().toDto(rule);
 
-        assertThat(dto).isEqualTo(new RuleDto(id, tenantId, "/pay", "POST", 5, 60, createdAt, updatedAt));
+        assertThat(dto).isEqualTo(new RuleDto(id, tenantId, "/pay", "POST", 5, 60, null, createdAt, updatedAt));
     }
 }

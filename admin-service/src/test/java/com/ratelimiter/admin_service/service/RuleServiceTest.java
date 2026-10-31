@@ -47,7 +47,7 @@ class RuleServiceTest {
     }
 
     private RuleDto request(String endpoint, String method, int limit, int windowSeconds) {
-        return new RuleDto(null, tenantId, endpoint, method, limit, windowSeconds, null, null);
+        return new RuleDto(null, tenantId, endpoint, method, limit, windowSeconds, null, null, null);
     }
 
     private Rule existingRule(UUID id, String endpoint, String method) {
@@ -160,7 +160,7 @@ class RuleServiceTest {
         when(ruleRepository.saveAndFlush(rule)).thenReturn(rule);
 
         RuleDto result = ruleService.update(id,
-                new RuleDto(null, otherTenant, "/pay", "POST", 10, 30, null, null));
+                new RuleDto(null, otherTenant, "/pay", "POST", 10, 30, null, null, null));
 
         assertThat(result.tenantId()).isEqualTo(tenantId);
         verify(cacheInvalidator).invalidateRules(tenantId);

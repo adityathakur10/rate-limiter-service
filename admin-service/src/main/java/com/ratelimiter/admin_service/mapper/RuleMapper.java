@@ -15,6 +15,7 @@ public class RuleMapper {
             rule.getMethod(),
             rule.getLimit(),
             rule.getWindowSeconds(),
+            null, // algorithm column arrives in step 3.1; null means fixed_window
             rule.getCreatedAt(),
             rule.getUpdatedAt()
         );

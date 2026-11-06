@@ -1,4 +1,4 @@
-package com.ratelimiter.admin.entity;
+package com.ratelimiter.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -1,6 +1,6 @@
 package com.ratelimiter.admin.mapper;
 
-import com.ratelimiter.admin.entity.Tenant;
+import com.ratelimiter.common.entity.Tenant;
 import com.ratelimiter.common.dto.TenantDto;
 import org.springframework.stereotype.Component;
 

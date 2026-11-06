@@ -1,6 +1,8 @@
-package com.ratelimiter.admin.entity;
+package com.ratelimiter.common.entity;
 
+import com.ratelimiter.common.algorithm.AlgorithmType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -36,6 +38,10 @@ public class Rule {
 
     @Column(name = "window_seconds", nullable = false)
     private int windowSeconds;
+
+    @Convert(converter = AlgorithmTypeConverter.class)
+    @Column(nullable = false, length = 32)
+    private AlgorithmType algorithm = AlgorithmType.FIXED_WINDOW;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -97,6 +103,14 @@ public class Rule {
 
     public void setWindowSeconds(int windowSeconds) {
         this.windowSeconds = windowSeconds;
+    }
+
+    public AlgorithmType getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(AlgorithmType algorithm) {
+        this.algorithm = algorithm;
     }
 
     public Instant getCreatedAt() {

@@ -1,5 +1,6 @@
 package com.ratelimiter;
 
+import com.ratelimiter.common.algorithm.AlgorithmType;
 import com.ratelimiter.common.dto.RuleDto;
 import com.ratelimiter.common.dto.TenantDto;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -179,6 +181,53 @@ class AdminApiIntegrationTest {
 
 		assertThat(rule.endpoint()).isEqualTo("*");
 		assertThat(rule.method()).isEqualTo("*");
+	}
+
+	// rules: algorithm
+
+	@Test
+	void omittedAlgorithmDefaultsToFixedWindow() {
+		TenantDto tenant = createTenant("algo-default");
+
+		RuleDto rule = createRule(tenant.id(), "/pay", "POST", 5, 60);
+
+		assertThat(rule.algorithm()).isEqualTo(AlgorithmType.FIXED_WINDOW);
+	}
+
+	@Test
+	void explicitAlgorithmIsAcceptedAndReturnedLowercase() {
+		TenantDto tenant = createTenant("algo-explicit");
+		Map<String, Object> body = new HashMap<>(ruleBody(tenant.id(), "/pay", "POST", 5, 60));
+		body.put("algorithm", "fixed_window");
+
+		postRule(body)
+				.expectStatus().isCreated()
+				.expectBody()
+				.jsonPath("$.algorithm").isEqualTo("fixed_window");
+	}
+
+	@Test
+	void updateWithoutAnAlgorithmResetsItToFixedWindow() {
+		TenantDto tenant = createTenant("algo-update");
+		RuleDto created = createRule(tenant.id(), "/pay", "POST", 5, 60);
+
+		client.put().uri(RULES + "/{id}", created.id())
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(ruleBody(tenant.id(), "/pay", "POST", 7, 60))
+				.exchange()
+				.expectStatus().isOk()
+				.expectBody()
+				.jsonPath("$.algorithm").isEqualTo("fixed_window");
+	}
+
+	@Test
+	void unknownAlgorithmReturns400() {
+		TenantDto tenant = createTenant("algo-unknown");
+		Map<String, Object> body = new HashMap<>(ruleBody(tenant.id(), "/pay", "POST", 5, 60));
+		body.put("algorithm", "bogus");
+
+		postRule(body)
+				.expectStatus().isBadRequest();
 	}
 
 	// rules: error paths

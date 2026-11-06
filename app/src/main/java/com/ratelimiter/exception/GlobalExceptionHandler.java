@@ -4,6 +4,7 @@ import com.ratelimiter.admin.exception.ConflictException;
 import com.ratelimiter.admin.exception.ResourceNotFoundException;
 import com.ratelimiter.common.dto.ErrorResponseDto;
 import com.ratelimiter.common.exception.RateLimiterException;
+import com.ratelimiter.common.exception.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
@@ -34,6 +35,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponseDto> handleConflict(ConflictException ex) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponseDto> handleUnauthorized(UnauthorizedException ex) {
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), Map.of());
     }
 
     // any other RateLimiterException is treated as a bad request

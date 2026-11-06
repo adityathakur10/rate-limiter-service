@@ -81,6 +81,7 @@
                   "  pm.expect(body.endpoint).to.eql('/api/orders');",
                   "  pm.expect(body.limit).to.eql(100);",
                   "});",
+                  "pm.test('algorithm defaults to fixed_window', () => pm.expect(body.algorithm).to.eql('fixed_window'));",
                   "pm.collectionVariables.set('ruleId', body.id);"
                 ]
               }
@@ -210,6 +211,29 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"\",\n  \"method\": \"GET\",\n  \"limit\": 0,\n  \"windowSeconds\": 0\n}"
+            },
+            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+          }
+        },
+        {
+          "name": "Create rule, unknown algorithm (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/algo\",\n  \"method\": \"GET\",\n  \"limit\": 10,\n  \"windowSeconds\": 60,\n  \"algorithm\": \"bogus\"\n}"
             },
             "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
           }

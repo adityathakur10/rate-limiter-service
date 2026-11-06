@@ -1,12 +1,13 @@
 package com.ratelimiter.admin.service;
 
-import com.ratelimiter.admin.entity.Rule;
+import com.ratelimiter.common.entity.Rule;
 import com.ratelimiter.admin.exception.ConflictException;
 import com.ratelimiter.admin.exception.ResourceNotFoundException;
 import com.ratelimiter.admin.mapper.RuleMapper;
 import com.ratelimiter.admin.repository.RuleRepository;
 import com.ratelimiter.admin.repository.TenantRepository;
 import com.ratelimiter.admin.service.cache.CacheInvalidator;
+import com.ratelimiter.common.algorithm.AlgorithmType;
 import com.ratelimiter.common.dto.RuleDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,6 +79,31 @@ class RuleServiceTest {
         assertThat(result.limit()).isEqualTo(5);
         assertThat(result.windowSeconds()).isEqualTo(60);
         verify(cacheInvalidator).invalidateRules(tenantId);
+    }
+
+    @Test
+    void createStoresFixedWindowWhenTheAlgorithmIsOmitted() {
+        when(tenantRepository.existsById(tenantId)).thenReturn(true);
+        when(ruleRepository.findByTenantIdAndEndpointAndMethod(tenantId, "/pay", "POST"))
+                .thenReturn(Optional.empty());
+        when(ruleRepository.save(any(Rule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RuleDto result = ruleService.create(request("/pay", "POST", 5, 60));
+
+        assertThat(result.algorithm()).isEqualTo(AlgorithmType.FIXED_WINDOW);
+    }
+
+    @Test
+    void createKeepsAnExplicitAlgorithm() {
+        when(tenantRepository.existsById(tenantId)).thenReturn(true);
+        when(ruleRepository.findByTenantIdAndEndpointAndMethod(tenantId, "/pay", "POST"))
+                .thenReturn(Optional.empty());
+        when(ruleRepository.save(any(Rule.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RuleDto result = ruleService.create(new RuleDto(
+                null, tenantId, "/pay", "POST", 5, 60, AlgorithmType.FIXED_WINDOW, null, null));
+
+        assertThat(result.algorithm()).isEqualTo(AlgorithmType.FIXED_WINDOW);
     }
 
     @Test

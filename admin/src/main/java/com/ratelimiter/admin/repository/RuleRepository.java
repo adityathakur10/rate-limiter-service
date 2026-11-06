@@ -1,6 +1,6 @@
 package com.ratelimiter.admin.repository;
 
-import com.ratelimiter.admin.entity.Rule;
+import com.ratelimiter.common.entity.Rule;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

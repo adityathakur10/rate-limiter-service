@@ -1,6 +1,6 @@
 package com.ratelimiter.admin.mapper;
 
-import com.ratelimiter.admin.entity.Rule;
+import com.ratelimiter.common.entity.Rule;
 import com.ratelimiter.common.dto.RuleDto;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,7 @@ public class RuleMapper {
             rule.getMethod(),
             rule.getLimit(),
             rule.getWindowSeconds(),
-            null, // algorithm column arrives in step 3.1; null means fixed_window
+            rule.getAlgorithm(),
             rule.getCreatedAt(),
             rule.getUpdatedAt()
         );

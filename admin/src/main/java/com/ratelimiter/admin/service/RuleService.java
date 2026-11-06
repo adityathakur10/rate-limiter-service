@@ -1,12 +1,13 @@
 package com.ratelimiter.admin.service;
 
-import com.ratelimiter.admin.entity.Rule;
+import com.ratelimiter.common.entity.Rule;
 import com.ratelimiter.admin.exception.ConflictException;
 import com.ratelimiter.admin.exception.ResourceNotFoundException;
 import com.ratelimiter.admin.mapper.RuleMapper;
 import com.ratelimiter.admin.repository.RuleRepository;
 import com.ratelimiter.admin.repository.TenantRepository;
 import com.ratelimiter.admin.service.cache.CacheInvalidator;
+import com.ratelimiter.common.algorithm.AlgorithmType;
 import com.ratelimiter.common.dto.RuleDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,6 +86,8 @@ public class RuleService {
         rule.setMethod(request.method());
         rule.setLimit(request.limit());
         rule.setWindowSeconds(request.windowSeconds());
+        // omitted means fixed_window, on update too: PUT replaces the whole rule
+        rule.setAlgorithm(request.algorithm() == null ? AlgorithmType.FIXED_WINDOW : request.algorithm());
     }
 
     private Rule findRule(UUID id) {

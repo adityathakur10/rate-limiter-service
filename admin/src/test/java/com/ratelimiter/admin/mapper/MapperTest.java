@@ -1,7 +1,8 @@
 package com.ratelimiter.admin.mapper;
 
-import com.ratelimiter.admin.entity.Rule;
-import com.ratelimiter.admin.entity.Tenant;
+import com.ratelimiter.common.entity.Rule;
+import com.ratelimiter.common.entity.Tenant;
+import com.ratelimiter.common.algorithm.AlgorithmType;
 import com.ratelimiter.common.dto.RuleDto;
 import com.ratelimiter.common.dto.TenantDto;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,6 @@ class MapperTest {
 
         RuleDto dto = new RuleMapper().toDto(rule);
 
-        assertThat(dto).isEqualTo(new RuleDto(id, tenantId, "/pay", "POST", 5, 60, null, createdAt, updatedAt));
+        assertThat(dto).isEqualTo(new RuleDto(id, tenantId, "/pay", "POST", 5, 60, AlgorithmType.FIXED_WINDOW, createdAt, updatedAt));
     }
 }

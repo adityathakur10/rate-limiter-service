@@ -30,6 +30,10 @@ public class RateLimitController {
 
     // X-RateLimit-Reset is the window end in epoch seconds; Retry-After is seconds to wait.
     private static ResponseEntity<RateLimitResponseDto> toResponse(Decision decision) {
+        if (!decision.isLimited()) {
+            // no rule applies: there is no limit to report, so no X-RateLimit-* headers
+            return ResponseEntity.ok(new RateLimitResponseDto(true, null, null, null));
+        }
         ResponseEntity.BodyBuilder response = ResponseEntity
                 .status(decision.allowed() ? HttpStatus.OK : HttpStatus.TOO_MANY_REQUESTS)
                 .header("X-RateLimit-Limit", String.valueOf(decision.limit()))
@@ -40,6 +44,6 @@ public class RateLimitController {
         }
         return response
                 .header("Retry-After", String.valueOf(decision.retryAfterSeconds()))
-                .body(new RateLimitResponseDto(false, 0, null, decision.retryAfterSeconds()));
+                .body(new RateLimitResponseDto(false, 0L, null, decision.retryAfterSeconds()));
     }
 }

@@ -1,10 +1,11 @@
 package com.ratelimiter.core.service;
 
+import com.ratelimiter.common.cache.CacheKeys;
 import com.ratelimiter.common.exception.UnauthorizedException;
+import com.ratelimiter.core.redis.RedisCache;
 import com.ratelimiter.core.repository.TenantReadRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import tools.jackson.core.JacksonException;
@@ -22,19 +23,18 @@ import java.util.UUID;
 public class ApiKeyValidator {
 
     private static final Logger log = LoggerFactory.getLogger(ApiKeyValidator.class);
-    private static final String KEY_PREFIX = "tenant:";
     private static final Duration TTL = Duration.ofMinutes(10);
 
     /** What is cached: the only thing the hot path needs to know about a tenant. */
     record CachedTenant(UUID tenantId) {
     }
 
-    private final ReactiveStringRedisTemplate redis;
+    private final RedisCache cache;
     private final TenantReadRepository tenants;
     private final JsonMapper jsonMapper;
 
-    public ApiKeyValidator(ReactiveStringRedisTemplate redis, TenantReadRepository tenants, JsonMapper jsonMapper) {
-        this.redis = redis;
+    public ApiKeyValidator(RedisCache cache, TenantReadRepository tenants, JsonMapper jsonMapper) {
+        this.cache = cache;
         this.tenants = tenants;
         this.jsonMapper = jsonMapper;
     }
@@ -52,19 +52,20 @@ public class ApiKeyValidator {
     }
 
     private Mono<UUID> tenantIdFor(String apiKey) {
-        String cacheKey = KEY_PREFIX + apiKey;
-        return redis.opsForValue().get(cacheKey)
-                .flatMap(json -> parse(cacheKey, json))
+        String cacheKey = CacheKeys.tenant(apiKey);
+        return cache.get(cacheKey)
+                .flatMap(this::parse)
                 .switchIfEmpty(Mono.defer(() -> loadAndCache(cacheKey, apiKey)))
                 .map(CachedTenant::tenantId);
     }
 
     // a value that cannot be read is treated as a miss, so it gets reloaded and overwritten
-    private Mono<CachedTenant> parse(String cacheKey, String json) {
+    // (the cache key is not logged: it contains the API key)
+    private Mono<CachedTenant> parse(String json) {
         try {
             return Mono.justOrEmpty(jsonMapper.readValue(json, CachedTenant.class));
         } catch (JacksonException e) {
-            log.warn("Unreadable cache value under {}; reloading from Postgres", cacheKey);
+            log.warn("Unreadable cached tenant; reloading from Postgres");
             return Mono.empty();
         }
     }
@@ -72,7 +73,7 @@ public class ApiKeyValidator {
     private Mono<CachedTenant> loadAndCache(String cacheKey, String apiKey) {
         return tenants.findByApiKey(apiKey)
                 .map(tenant -> new CachedTenant(tenant.getId()))
-                .flatMap(cached -> redis.opsForValue()
+                .flatMap(cached -> cache
                         .set(cacheKey, jsonMapper.writeValueAsString(cached), TTL)
                         .thenReturn(cached));
     }

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@Import(PostgresContainerConfig.class)
+@Import({PostgresContainerConfig.class, RedisContainerConfig.class})
 class AdminApiIntegrationTest {
 
 	private static final String TENANTS = "/admin/v1/tenants";

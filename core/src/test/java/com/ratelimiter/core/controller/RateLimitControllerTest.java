@@ -1,22 +1,33 @@
 package com.ratelimiter.core.controller;
 
+import com.ratelimiter.common.algorithm.AlgorithmType;
+import com.ratelimiter.common.dto.RuleDto;
 import com.ratelimiter.core.CoreTestApplication;
 import com.ratelimiter.core.RedisContainerConfig;
+import com.ratelimiter.core.service.ApiKeyValidator;
+import com.ratelimiter.core.service.RuleResolver;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-// the temporary rule from step 2.9 applies: 5 requests per 60 seconds for every tenant
+// real Redis and real limiter; the key check and the rule lookup are stubbed, so every tenant
+// has one rule here: 5 requests per 60 seconds for any endpoint and method
 @SpringBootTest(classes = CoreTestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @Import(RedisContainerConfig.class)
@@ -26,6 +37,20 @@ class RateLimitControllerTest {
 
     @Autowired
     private WebTestClient client;
+
+    @MockitoBean
+    private ApiKeyValidator apiKeyValidator;
+
+    @MockitoBean
+    private RuleResolver ruleResolver;
+
+    @BeforeEach
+    void stubKeyCheckAndRules() {
+        when(apiKeyValidator.validate(any(), any())).thenReturn(Mono.empty());
+        RuleDto rule = new RuleDto(UUID.randomUUID(), UUID.randomUUID(), "*", "*", 5, 60,
+                AlgorithmType.FIXED_WINDOW, null, null);
+        when(ruleResolver.rulesFor(any())).thenReturn(Mono.just(List.of(rule)));
+    }
 
     private Map<String, Object> body(UUID tenantId) {
         return Map.of("tenantId", tenantId, "apiKey", "any-key", "endpoint", "/payments/send", "method", "POST");
@@ -110,6 +135,23 @@ class RateLimitControllerTest {
 
         post(body(busy)).expectStatus().isEqualTo(429);
         post(body(UUID.randomUUID())).expectStatus().isOk();
+    }
+
+    @Test
+    void aRequestNoRuleAppliesToIsAllowedWithoutLimitHeaders() {
+        when(ruleResolver.rulesFor(any())).thenReturn(Mono.just(List.of()));
+
+        post(body(UUID.randomUUID()))
+                .expectStatus().isOk()
+                .expectHeader().doesNotExist("X-RateLimit-Limit")
+                .expectHeader().doesNotExist("X-RateLimit-Remaining")
+                .expectHeader().doesNotExist("X-RateLimit-Reset")
+                .expectHeader().doesNotExist("Retry-After")
+                .expectBody()
+                .jsonPath("$.allowed").isEqualTo(true)
+                .jsonPath("$.remaining").doesNotExist()
+                .jsonPath("$.resetAt").doesNotExist()
+                .jsonPath("$.retryAfterSeconds").doesNotExist();
     }
 
     // bad input

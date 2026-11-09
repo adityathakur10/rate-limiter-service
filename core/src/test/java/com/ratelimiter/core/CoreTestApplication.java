@@ -22,8 +22,12 @@ import org.springframework.context.annotation.FilterType;
         "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration",
         "org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration"
 })
-@ComponentScan(basePackages = "com.ratelimiter.core", excludeFilters = @ComponentScan.Filter(
-        type = FilterType.REGEX, pattern = "com\\.ratelimiter\\.core\\.repository\\..*"))
+@ComponentScan(basePackages = "com.ratelimiter.core", excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.ratelimiter\\.core\\.repository\\..*"),
+        // a hand-written scan, unlike @SpringBootApplication's, would pick up this test configuration
+        // and start Redis for every test; the tests that want it @Import it
+        @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = RedisContainerConfig.class)
+})
 public class CoreTestApplication {
 
     @Bean

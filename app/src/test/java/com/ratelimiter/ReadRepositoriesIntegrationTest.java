@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // so this also checks that core's reads match the schema admin's Flyway scripts build
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@Import(PostgresContainerConfig.class)
+@Import({PostgresContainerConfig.class, RedisContainerConfig.class})
 class ReadRepositoriesIntegrationTest {
 
 	@Autowired

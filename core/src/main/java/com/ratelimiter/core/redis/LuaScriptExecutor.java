@@ -10,7 +10,8 @@ import java.util.List;
 /**
  * Runs a Lua script and returns its numeric reply. Spring sends EVALSHA and falls back to
  * EVAL on NOSCRIPT by itself, so this class only wraps the call. Each algorithm reads
- * its own reply shape.
+ * its own reply shape. Any Redis failure surfaces as {@link RedisUnavailableException}, so the
+ * caller can decide what to do (the rate-limit service fails open).
  */
 @Component
 public class LuaScriptExecutor {
@@ -22,6 +23,7 @@ public class LuaScriptExecutor {
     }
 
     public Mono<List<Long>> execute(RedisScript<List<Long>> script, List<String> keys, List<String> args) {
-        return redis.execute(script, keys, args).next();
+        return redis.execute(script, keys, args).next()
+                .onErrorMap(e -> new RedisUnavailableException("Redis script call failed", e));
     }
 }

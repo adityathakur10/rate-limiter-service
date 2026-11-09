@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Import;
 // Annotated like the integration tests so they all share one cached context and one container.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-@Import(PostgresContainerConfig.class)
+@Import({PostgresContainerConfig.class, RedisContainerConfig.class})
 class RateLimiterApplicationTests {
 
 	@Test

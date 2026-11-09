@@ -12,6 +12,9 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      # short, so a Redis outage is noticed quickly and requests fail open instead of hanging
+      timeout: ${REDIS_TIMEOUT:500ms}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:500ms}
   jpa:
     hibernate:
       ddl-auto: validate

@@ -9,4 +9,14 @@ public record Decision(
         long remaining,
         Instant resetAt,
         long retryAfterSeconds) {
+
+    /** No rule applies to the request: it is allowed and nothing is counted. */
+    public static Decision unlimited() {
+        return new Decision(true, 0, 0, null, 0);
+    }
+
+    /** False only for {@link #unlimited()}, the one decision that has no window. */
+    public boolean isLimited() {
+        return resetAt != null;
+    }
 }

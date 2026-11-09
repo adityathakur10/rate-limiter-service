@@ -1,19 +1,46 @@
 {
   "info": {
     "name": "Rate Limiter",
-    "description": "Admin requests (Stage 1) and POST /v1/check requests (Stage 2). Run top to bottom: the first request saves tenantId and apiKey, the rule requests save ruleId, and each request asserts its status code. The check folders need Redis running as well as Postgres. Stage 3 adds the real-rule and 401 cases.",
+    "description": "Admin requests and POST /v1/check requests. Run top to bottom: the first request saves tenantId and apiKey, the rule requests save ruleId, and each request asserts its status code. The check folders create their own tenant and rule, and need Redis running as well as Postgres.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "adminUrl", "value": "http://localhost:8080" },
-    { "key": "tenantId", "value": "" },
-    { "key": "apiKey", "value": "" },
-    { "key": "ruleId", "value": "" },
-    { "key": "unknownId", "value": "00000000-0000-0000-0000-000000000000" },
-    { "key": "coreUrl", "value": "http://localhost:8080" },
-    { "key": "checkApiKey", "value": "any-key-until-stage-3" },
-    { "key": "checkTenantId", "value": "" },
-    { "key": "limitTenantId", "value": "" }
+    {
+      "key": "adminUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "tenantId",
+      "value": ""
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "ruleId",
+      "value": ""
+    },
+    {
+      "key": "unknownId",
+      "value": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "key": "coreUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "checkApiKey",
+      "value": ""
+    },
+    {
+      "key": "checkTenantId",
+      "value": ""
+    },
+    {
+      "key": "checkRuleId",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -41,9 +68,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Acme Corp\"\n}" },
-            "url": { "raw": "{{adminUrl}}/admin/v1/tenants", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\"\n}"
+            },
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/tenants",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "tenants"
+              ]
+            }
           }
         },
         {
@@ -63,7 +108,18 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{adminUrl}}/admin/v1/tenants/{{tenantId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants", "{{tenantId}}"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/tenants/{{tenantId}}",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "tenants",
+                "{{tenantId}}"
+              ]
+            }
           }
         },
         {
@@ -89,12 +145,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 100,\n  \"windowSeconds\": 60\n}"
             },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            }
           }
         },
         {
@@ -119,9 +190,20 @@
             "header": [],
             "url": {
               "raw": "{{adminUrl}}/admin/v1/rules?tenantId={{tenantId}}",
-              "host": ["{{adminUrl}}"],
-              "path": ["admin", "v1", "rules"],
-              "query": [{ "key": "tenantId", "value": "{{tenantId}}" }]
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "{{tenantId}}"
+                }
+              ]
             }
           }
         },
@@ -145,12 +227,28 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 200,\n  \"windowSeconds\": 30\n}"
             },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{ruleId}}"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules",
+                "{{ruleId}}"
+              ]
+            }
           }
         }
       ]
@@ -178,12 +276,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 100,\n  \"windowSeconds\": 60\n}"
             },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            }
           }
         },
         {
@@ -207,12 +320,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"\",\n  \"method\": \"GET\",\n  \"limit\": 0,\n  \"windowSeconds\": 0\n}"
             },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            }
           }
         },
         {
@@ -230,12 +358,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/algo\",\n  \"method\": \"GET\",\n  \"limit\": 10,\n  \"windowSeconds\": 60,\n  \"algorithm\": \"bogus\"\n}"
             },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            }
           }
         },
         {
@@ -253,12 +396,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{unknownId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"GET\",\n  \"limit\": 10,\n  \"windowSeconds\": 60\n}"
             },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            }
           }
         },
         {
@@ -276,9 +434,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{ \"tenantId\": " },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"tenantId\": "
+            },
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            }
           }
         },
         {
@@ -297,7 +473,17 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            }
           }
         },
         {
@@ -318,9 +504,20 @@
             "header": [],
             "url": {
               "raw": "{{adminUrl}}/admin/v1/rules?tenantId={{unknownId}}",
-              "host": ["{{adminUrl}}"],
-              "path": ["admin", "v1", "rules"],
-              "query": [{ "key": "tenantId", "value": "{{unknownId}}" }]
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "{{unknownId}}"
+                }
+              ]
             }
           }
         },
@@ -339,12 +536,28 @@
           ],
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantId\": \"{{tenantId}}\",\n  \"endpoint\": \"/api/orders\",\n  \"method\": \"POST\",\n  \"limit\": 10,\n  \"windowSeconds\": 60\n}"
             },
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{unknownId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{unknownId}}"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules/{{unknownId}}",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules",
+                "{{unknownId}}"
+              ]
+            }
           }
         },
         {
@@ -363,9 +576,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" },
-            "url": { "raw": "{{adminUrl}}/admin/v1/tenants", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/tenants",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "tenants"
+              ]
+            }
           }
         },
         {
@@ -385,7 +616,18 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{adminUrl}}/admin/v1/tenants/{{unknownId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants", "{{unknownId}}"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/tenants/{{unknownId}}",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "tenants",
+                "{{unknownId}}"
+              ]
+            }
           }
         },
         {
@@ -404,27 +646,109 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{adminUrl}}/admin/v1/tenants/not-a-uuid", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "tenants", "not-a-uuid"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/tenants/not-a-uuid",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "tenants",
+                "not-a-uuid"
+              ]
+            }
           }
         }
       ]
     },
     {
       "name": "Core - check",
-      "description": "POST /v1/check against the hardcoded rule of step 2.9: 5 requests per 60 seconds per tenant. Each request in this folder uses a fresh random tenant, so the folder can be re-run any time. The api key is not validated until Stage 3.",
+      "description": "POST /v1/check against a real tenant and rule created by the first two requests (5 per 60 seconds for POST /payments/send). Run top to bottom: the setup requests save checkTenantId, checkApiKey and checkRuleId, then the calls count down to a 429, a rule edit is seen by the next check, a wrong key gives 401, and an endpoint no rule covers is allowed. The last request only shows something while Redis is stopped: the check then fails open with 200 and X-RateLimit-Status: degraded.",
       "item": [
         {
-          "name": "Check, first call (200)",
+          "name": "Setup: create tenant (201)",
           "event": [
             {
-              "listen": "prerequest",
+              "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.collectionVariables.set('checkTenantId', pm.variables.replaceIn('{{$guid}}'));"
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('checkTenantId', body.id);",
+                  "pm.collectionVariables.set('checkApiKey', body.apiKey);"
                 ]
               }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/tenants",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "tenants"
+              ]
             },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Check Flow Tenant\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Setup: create rule, 5 per 60s (201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('checkRuleId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\",\n  \"limit\": 5,\n  \"windowSeconds\": 60\n}"
+            }
+          }
+        },
+        {
+          "name": "Check, first call (200)",
+          "event": [
             {
               "listen": "test",
               "script": {
@@ -432,16 +756,18 @@
                 "exec": [
                   "pm.test('200 OK', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
-                  "pm.test('allowed, 4 remaining, reset time present, no retryAfter', () => {",
+                  "pm.test('allowed, 4 remaining, reset time present, no retryAfter, not degraded', () => {",
                   "  pm.expect(body.allowed).to.eql(true);",
                   "  pm.expect(body.remaining).to.eql(4);",
                   "  pm.expect(body.resetAt).to.be.a('string');",
                   "  pm.expect(body).to.not.have.property('retryAfterSeconds');",
+                  "  pm.expect(body).to.not.have.property('degraded');",
                   "});",
                   "pm.test('X-RateLimit headers', () => {",
                   "  pm.expect(pm.response.headers.get('X-RateLimit-Limit')).to.eql('5');",
                   "  pm.expect(pm.response.headers.get('X-RateLimit-Remaining')).to.eql('4');",
                   "  pm.expect(pm.response.headers.get('X-RateLimit-Reset')).to.match(/^\\d+$/);",
+                  "  pm.expect(pm.response.headers.has('X-RateLimit-Status')).to.eql(false);",
                   "});"
                 ]
               }
@@ -449,9 +775,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            }
           }
         },
         {
@@ -473,9 +816,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            }
           }
         },
         {
@@ -486,11 +846,9 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "// use up the 5 allowed calls for a fresh tenant, so the request itself is the 6th",
-                  "const tenant = pm.variables.replaceIn('{{$guid}}');",
-                  "pm.collectionVariables.set('limitTenantId', tenant);",
-                  "const payload = JSON.stringify({ tenantId: tenant, apiKey: pm.collectionVariables.get('checkApiKey'), endpoint: '/payments/send', method: 'POST' });",
-                  "for (let i = 0; i < 5; i++) {",
+                  "// calls 1 and 2 are the requests above; use up 3, 4 and 5 so this request is the 6th",
+                  "const payload = JSON.stringify({ tenantId: pm.collectionVariables.get('checkTenantId'), apiKey: pm.collectionVariables.get('checkApiKey'), endpoint: '/payments/send', method: 'POST' });",
+                  "for (let i = 0; i < 3; i++) {",
                   "  pm.sendRequest({",
                   "    url: pm.collectionVariables.get('coreUrl') + '/v1/check',",
                   "    method: 'POST',",
@@ -525,9 +883,231 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{limitTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Setup: raise the limit to 20 (200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('limit is 20', () => pm.expect(pm.response.json().limit).to.eql(20));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules/{{checkRuleId}}",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules",
+                "{{checkRuleId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\",\n  \"limit\": 20,\n  \"windowSeconds\": 60\n}"
+            }
+          }
+        },
+        {
+          "name": "Check, after the rule edit (200, new limit at once)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK, the edit took effect on the very next check', () => pm.response.to.have.status(200));",
+                  "pm.test('limit header is 20', () => pm.expect(pm.response.headers.get('X-RateLimit-Limit')).to.eql('20'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Check, wrong api key (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "pm.test('generic message', () => pm.expect(pm.response.json().message).to.eql('Invalid API key'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"rl_not_a_real_key\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Check, no rule applies (200, no limit headers)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('allowed, with nothing to report', () => {",
+                  "  pm.expect(pm.response.json().allowed).to.eql(true);",
+                  "  pm.expect(pm.response.headers.has('X-RateLimit-Limit')).to.eql(false);",
+                  "  pm.expect(pm.response.headers.has('X-RateLimit-Status')).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/not-limited\",\n  \"method\": \"GET\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Check, Redis down (200 degraded) - MANUAL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Only meaningful while Redis is stopped (docker stop ratelimiter-redis); with Redis up this test is skipped.",
+                  "if (pm.response.headers.has('X-RateLimit-Status')) {",
+                  "  pm.test('200, flagged degraded, not counted', () => {",
+                  "    pm.expect(pm.response).to.have.status(200);",
+                  "    pm.expect(pm.response.headers.get('X-RateLimit-Status')).to.eql('degraded');",
+                  "    pm.expect(pm.response.json()).to.include({ allowed: true, degraded: true });",
+                  "    pm.expect(pm.response.headers.has('X-RateLimit-Limit')).to.eql(false);",
+                  "  });",
+                  "} else {",
+                  "  pm.test.skip('Redis is up, so the check was not degraded; stop Redis to see the flag');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{checkTenantId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            }
           }
         }
       ]
@@ -551,9 +1131,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"{{unknownId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"\",\n  \"method\": \"POST\"\n}" },
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"{{unknownId}}\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"\",\n  \"method\": \"POST\"\n}"
+            },
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            }
           }
         },
         {
@@ -572,9 +1169,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            },
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            }
           }
         },
         {
@@ -592,9 +1206,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"tenantId\": \"not-a-uuid\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}" },
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenantId\": \"not-a-uuid\",\n  \"apiKey\": \"{{checkApiKey}}\",\n  \"endpoint\": \"/payments/send\",\n  \"method\": \"POST\"\n}"
+            },
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            }
           }
         },
         {
@@ -612,9 +1243,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{ this is not json" },
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ this is not json"
+            },
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            }
           }
         },
         {
@@ -633,7 +1281,16 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{coreUrl}}/v1/check", "host": ["{{coreUrl}}"], "path": ["v1", "check"] }
+            "url": {
+              "raw": "{{coreUrl}}/v1/check",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "check"
+              ]
+            }
           }
         },
         {
@@ -651,9 +1308,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{}" },
-            "url": { "raw": "{{coreUrl}}/v1/does-not-exist", "host": ["{{coreUrl}}"], "path": ["v1", "does-not-exist"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{coreUrl}}/v1/does-not-exist",
+              "host": [
+                "{{coreUrl}}"
+              ],
+              "path": [
+                "v1",
+                "does-not-exist"
+              ]
+            }
           }
         }
       ]
@@ -677,7 +1351,18 @@
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{ruleId}}"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules",
+                "{{ruleId}}"
+              ]
+            }
           }
         },
         {
@@ -696,7 +1381,18 @@
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": { "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}", "host": ["{{adminUrl}}"], "path": ["admin", "v1", "rules", "{{ruleId}}"] }
+            "url": {
+              "raw": "{{adminUrl}}/admin/v1/rules/{{ruleId}}",
+              "host": [
+                "{{adminUrl}}"
+              ],
+              "path": [
+                "admin",
+                "v1",
+                "rules",
+                "{{ruleId}}"
+              ]
+            }
           }
         }
       ]

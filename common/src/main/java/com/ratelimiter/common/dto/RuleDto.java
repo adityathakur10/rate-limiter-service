@@ -17,5 +17,6 @@ public record RuleDto(
         @Min(1) int windowSeconds,
         AlgorithmType algorithm,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt
+) {
 }

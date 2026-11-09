@@ -10,7 +10,8 @@ import java.util.Arrays;
  * and (from step 3.1) in the database. A new algorithm starts with one line here.
  */
 public enum AlgorithmType {
-    FIXED_WINDOW("fixed_window");
+    FIXED_WINDOW("fixed_window"),
+    SLIDING_WINDOW_LOG("sliding_window_log");
 
     private final String value;
 

@@ -82,6 +82,33 @@ class CheckFlowIntegrationTest {
 	}
 
 	@Test
+	void aSlidingWindowLogRuleIsEnforcedThroughTheWholeStack() {
+		TenantDto tenant = createTenant("sliding-log");
+		Map<String, Object> body = new java.util.HashMap<>(ruleBody(tenant.id(), "/pay", "POST", 2, 60));
+		body.put("algorithm", "sliding_window_log");
+		client.post().uri("/admin/v1/rules")
+				.contentType(MediaType.APPLICATION_JSON)
+				.bodyValue(body)
+				.exchange()
+				.expectStatus().isCreated()
+				.expectBody().jsonPath("$.algorithm").isEqualTo("sliding_window_log");
+
+		check(tenant.id(), tenant.apiKey(), "/pay", "POST")
+				.expectStatus().isOk()
+				.expectHeader().valueEquals("X-RateLimit-Limit", "2")
+				.expectHeader().valueEquals("X-RateLimit-Remaining", "1");
+		check(tenant.id(), tenant.apiKey(), "/pay", "POST")
+				.expectStatus().isOk()
+				.expectHeader().valueEquals("X-RateLimit-Remaining", "0");
+
+		check(tenant.id(), tenant.apiKey(), "/pay", "POST")
+				.expectStatus().isEqualTo(429)
+				.expectHeader().exists("Retry-After")
+				.expectBody()
+				.jsonPath("$.allowed").isEqualTo(false);
+	}
+
+	@Test
 	void aWrongApiKeyIs401() {
 		TenantDto tenant = createTenant("wrong-key");
 		createRule(tenant.id(), "/pay", "POST", 3, 60);

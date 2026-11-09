@@ -79,8 +79,10 @@ class RedisDownTest {
         for (int i = 0; i < 3; i++) {
             check().expectStatus().isOk()
                     .expectHeader().doesNotExist("X-RateLimit-Limit")
+                    .expectHeader().valueEquals("X-RateLimit-Status", "degraded")
                     .expectBody()
-                    .jsonPath("$.allowed").isEqualTo(true);
+                    .jsonPath("$.allowed").isEqualTo(true)
+                    .jsonPath("$.degraded").isEqualTo(true);
         }
     }
 

@@ -45,7 +45,7 @@ public class RateLimitService {
         return registry.resolve(rule).check(request.tenantId(), rule)
                 .onErrorResume(RedisUnavailableException.class, e -> {
                     log.warn("Redis is unavailable, allowing the request: {}", e.getCause() != null ? e.getCause().toString() : e.toString());
-                    return Mono.just(Decision.unlimited());
+                    return Mono.just(Decision.failedOpen());
                 });
     }
 }

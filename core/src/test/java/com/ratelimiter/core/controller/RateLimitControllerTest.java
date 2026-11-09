@@ -147,8 +147,10 @@ class RateLimitControllerTest {
                 .expectHeader().doesNotExist("X-RateLimit-Remaining")
                 .expectHeader().doesNotExist("X-RateLimit-Reset")
                 .expectHeader().doesNotExist("Retry-After")
+                .expectHeader().doesNotExist("X-RateLimit-Status")   // no rule is not a failure, so not flagged
                 .expectBody()
                 .jsonPath("$.allowed").isEqualTo(true)
+                .jsonPath("$.degraded").doesNotExist()
                 .jsonPath("$.remaining").doesNotExist()
                 .jsonPath("$.resetAt").doesNotExist()
                 .jsonPath("$.retryAfterSeconds").doesNotExist();

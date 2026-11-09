@@ -30,6 +30,12 @@ public class RateLimitController {
 
     // X-RateLimit-Reset is the window end in epoch seconds; Retry-After is seconds to wait.
     private static ResponseEntity<RateLimitResponseDto> toResponse(Decision decision) {
+        if (decision.degraded()) {
+            // the check was skipped (Redis is down): allowed, but the caller is told it was not counted
+            return ResponseEntity.ok()
+                    .header("X-RateLimit-Status", "degraded")
+                    .body(new RateLimitResponseDto(true, null, null, null, true));
+        }
         if (!decision.isLimited()) {
             // no rule applies: there is no limit to report, so no X-RateLimit-* headers
             return ResponseEntity.ok(new RateLimitResponseDto(true, null, null, null));

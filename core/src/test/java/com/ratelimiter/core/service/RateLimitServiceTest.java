@@ -85,6 +85,7 @@ class RateLimitServiceTest {
 
         assertThat(decision.allowed()).isTrue();
         assertThat(decision.isLimited()).isFalse();
+        assertThat(decision.degraded()).isFalse();   // nothing went wrong, so nothing to flag
         verifyNoInteractions(registry);
     }
 
@@ -121,6 +122,7 @@ class RateLimitServiceTest {
 
         assertThat(decision.allowed()).isTrue();
         assertThat(decision.isLimited()).isFalse();
+        assertThat(decision.degraded()).isTrue();   // the caller is told the check was skipped
     }
 
     @Test
